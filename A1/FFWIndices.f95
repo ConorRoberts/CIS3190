@@ -151,138 +151,100 @@
 
 module FFWIndices
 implicit none
+
+  real :: e = 2.71828182845904523536028747135266249775724709369995
+
 contains
 
-    ! function get_ew(R) result(EW)
-    !     implicit none
+    real function get_temperature()
+      ! Measured in degrees C
+      real :: T=20
+      get_temperature = T
+    end function
 
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R
-    !     real(r8) :: EW
+    real function get_relative_humidity()
+      ! Measured as %
+      real :: H=20
+      get_relative_humidity = H
+    end function
 
-    !     ! Apply equation
-    !     EW = 0.618*(R**0.753)+(10.*EXP((R-100.)/10.))+0.18*(21.1-T)
-    ! end function get_ew
+    real function get_wind_speed()
+      ! Measured in km/h
+      real :: W=20
+      get_wind_speed = W
+    end function
 
-    ! function get_wmo(R) result(WMO)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R
-    !     real(r8) :: WMO
-
-    !     ! Apply equation
-    !     WMO = 101.-R
-    ! end function get_wmo
-
-    ! function get_z(R,H) result(Z)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R,H
-    !     real(r8) :: Z
-
-    !     ! Apply equation
-    !     Z = 0.424*(1.-(H/100.)**1.7)+(0.0694*(R**0.5))*(1.-(H/100.)**8)
-    ! end function get_z
-
-    ! function get_x(R,T) result(X)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R,T
-    !     real(r8) :: X
-
-    !     ! Apply equation
-    !     X = Z*(0.463*(EXP(0.0365*T)))
-    ! end function get_x
-
-    ! function get_wm(ED,WMO) result(WM)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: ED,WMO
-    !     real(r8) :: WM
-
-    !     ! Apply equation
-    !     WM = ED+(WMO-ED)/10.**X
-    ! end function get_wm
-
-    ! function get_w(R,WMO) result(W)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R,WMO
-    !     real(r8) :: W
-
-    !     ! Apply equation
-    !     W = WM*(1.+0.5*(R-WMO))
-    ! end function get_w
-
-    ! function get_wf(R,WMO) result(WF)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R,WMO
-    !     real(r8) :: WF
-
-    !     ! Apply equation
-    !     WF = WMO*(1.+0.5*(R-WMO))
-    ! end function get_wf
-
-    ! function get_wmi(R,WMO) result(WMI)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real(r8),intent(in) :: R,WMO
-    !     real(r8) :: WMI
-
-    !     ! Apply equation
-    !     WMI = 20.0+280./EXP(0.023*WMO)
-    ! end function get_wmi
-
-    ! function get_wfmi(R,WMO) result(WFMI)
-    !     implicit none
-
-    !     ! Declare variables
-    !     real,intent(in) :: R,WMO
-    !     real :: WFMI
-
-    !     ! Apply equation
-    !     WFMI = 20.0+280./EXP(0.023*WMO)
-    ! end function get_wfmi
-
-    ! function get_f(M) result(F)
-    !     implicit none
-    !     F = 101 - M
-    ! end function get_f
+    real function get_rainfall()
+      ! Measured in mm
+      real :: R=20
+      get_rainfall = R
+    end function
     
-    ! function get_ed(H) result(ED)
-    !     implicit none
+    real function get_rainfall_dmc()
+      ! Measured in mm
+      real :: DMC=20
+      get_rainfall_dmc = DMC
+    end function
+    
+    real function get_rainfall_dc()
+      ! Measured in mm
+      real :: DC=20
+      get_rainfall_dc = DC
+    end function
 
-    !     real :: ED
+    ! Fine Fuel Moisture Code (FFMC)
 
-    !     ED=0.942*(H**0.679)+(11.*EXP((H-100.)/10.))+0.18*(21.2-T)
-    ! end function get_ed
+    real function get_previous_ffmc(H,W)
+      ! k0
 
-    ! function test(str), result(a)
-    !     ! define str as string
-    !     ! declare variables
-    !     integer :: a
-    !     a=0
-    !     character(len=*) :: str
-    !     ! Print str
-    !     print *,str
+      real :: H,W
+      get_previous_ffmc = 0.424*(1.-(H/100.)**1.7)+(0.0694*(W**0.5))*(1.-(H/100.)**8)
+    end function
 
-    !     return a
+    real function get_ffmc(T,H,W)
+      ! k
+      real:: H,W,T
+      get_ffmc = get_previous_ffmc(H,W) * 0.463**(0.0365*T)
+    end function
+
+    real function get_dry_ffmc()
+      ! Ed
+      real :: ED=20
+      get_dry_ffmc = ED
+    end function
+
+    ! real function get_wet_ffemc()
+    !   ! Ew
+    !   get_wet_ffemc = 
     ! end function
 
-    function f4(i)
-  !! result's variable:  by function name
-  !! result's data type: separately specified
-  integer, intent (in) :: i
-  integer              :: f4
-  f4 = i + 4
-end function
+    real function get_ffmc_ed(T,H,W)
+      ! m (ED)
+      real :: T,H,W,m_0,ED
+      get_ffmc_ed = ED + (M_0 - ED) * 10**(-get_ffmc(T,H,W))
+    end function
+
+    ! real function get_ffmc_ew()
+    !   ! m (EW)
+    !   get_ffmc_ew = 
+    ! end function
+
+    real function get_k_intermediate()
+      real :: K=20
+      get_k_intermediate = K
+    end function
+
+    real function get_log_drying_rate()
+      ! k
+      ! Measured as m/day
+      real :: K=20
+      get_log_drying_rate = K
+    end function
+
+    real function get_correction_term()
+      ! Measured as m/day
+      real :: C=20
+      get_correction_term = C
+    end function
     
 end module FFWIndices
