@@ -7,8 +7,8 @@ program ffwi
     real, dimension(12) :: dmc_factors,dc_factors
     integer :: i=0,days_left=0,current_month=0,current_day=0
     real :: temperature,rainfall
-    integer:: humidity,wind_speed,dmc,dc,isi,bui,fwi
-    real :: starting_ffmc,ffmc
+    integer:: humidity,wind_speed,dc,isi,bui,fwi
+    real :: starting_ffmc,ffmc,dmc
     logical :: should_print_header = .TRUE.
 
     ! Get filename from stdin
@@ -31,6 +31,7 @@ program ffwi
 
     read(1,102) starting_ffmc,starting_dmc,starting_dc,current_month,days_left
     ffmc = starting_ffmc
+    dmc = starting_dmc
 
     ! Get initial current day
     current_day = month_lengths(current_month) - days_left+1
@@ -40,7 +41,7 @@ program ffwi
         read(1,101,END=400) temperature,humidity,wind_speed,rainfall
 
         ffmc=get_ffmc(temperature,humidity,wind_speed,rainfall,ffmc)
-        dmc=0
+        dmc=get_dmc(temperature,humidity,rainfall,dmc,dmc_factors(current_month))
         dc=0
         isi=0
         bui=0
@@ -52,7 +53,7 @@ program ffwi
         end if
         
         ! Print data
-        write(*,105) current_month,current_day,temperature,humidity,wind_speed,rainfall,nint(ffmc),dmc,dc,isi,bui,fwi
+        write(*,105) current_month,current_day,temperature,humidity,wind_speed,rainfall,nint(ffmc),nint(dmc),dc,isi,bui,fwi
 
         previous_ffmc = ffmc
         previous_dc = dc
@@ -70,6 +71,7 @@ program ffwi
             ! Increment current day
             current_day = current_day + 1
         end if
+
     end do
     
 400 close(1)

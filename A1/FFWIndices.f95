@@ -1,8 +1,7 @@
 module FFWIndices
 implicit none
 
-  real :: current_dmc,previous_dmc
-  real :: previous_ffmc
+  real :: previous_dmc,previous_ffmc
   real :: correction,starting_moisture
 
 contains
@@ -113,15 +112,21 @@ contains
     end function
 
     real function get_dry_emc(temperature,humidity)
-      real :: temperature
+      real :: temperature,val
       integer :: humidity
-      get_dry_emc = 0.942*(humidity**0.679)+(11.*EXP((humidity-100.)/10.))+0.18*(21.1-temperature)
+      val = 0.942*(humidity**0.679) + (11.*EXP((humidity-100.)/10.))
+      val = val + 0.18*(21.1-temperature)*(1.-1./EXP(0.115*humidity))
+
+      get_dry_emc = val
     end function
 
     real function get_wet_emc(temperature,humidity)
-      real :: temperature
+      real :: temperature,val
       integer :: humidity
-      get_wet_emc = 0.618*(humidity**0.753)+(10.*EXP((humidity-100.)/10.))+0.18*(21.1-temperature)
+      val = 0.618*(humidity**0.753)+(10.*EXP((humidity-100.)/10.))
+      val = val + 0.18*(21.1-temperature)*(1.-1./EXP(0.115*humidity))
+
+      get_wet_emc = val
     end function
 
     real function get_rainfall(rainfall)
@@ -147,50 +152,97 @@ contains
   ! -----------------------------------------------------------------------
 
   real function get_dmc(temperature,humidity,rainfall,dmc,dmc_factor)
-    real :: new_dmc, temperature, rainfall,dmc,new_temperature
+    real :: new_dmc, temperature, rainfall,dmc
     integer :: humidity
-    real :: drying_factor,dmc_factor,dmc_after_rain,effective_rain,dmc_moisture
-    real :: function_in_rain_effect
+    real :: dmc_factor,dmc_after_rain,dmc_moisture
+    real :: moisture_after_rain,log_drying_rate
 
     previous_dmc = dmc
 
-    new_temperature = temperature
-
-    if ((temperature+1.1)>=0) then
-      print *,"Go to 41"
-    else
-      temperature = temperature - 1.1
-    end if
-    
-    drying_factor=1.894*(temperature+1.1)*(100.-humidity)*(dmc_factor*0.0001)
-
+    ! Check if we should run rainfall routine or not
     if (rainfall > 1.5) then
-      print *,"Go to 45"
-      effective_rain=0.92*rainfall-1.27
+
+      dmc_moisture = get_dmc_moisture()
+
+      moisture_after_rain = get_dmc_moisture_after_rain(dmc_moisture,rainfall)
+
+      dmc_after_rain = get_dmc_after_rain(moisture_after_rain)
+
+      log_drying_rate = get_dmc_log_drying_rate(temperature,humidity,dmc_factor)
+
+      new_dmc = dmc_after_rain + log_drying_rate
     else
-      dmc_after_rain=dmc
-      print *,"Go to 250"
-    end if
-    dmc_moisture=20.0+280./EXP(0.023*dmc)
-    if (dmc <= 33) then 
+      log_drying_rate = get_dmc_log_drying_rate(temperature,humidity,dmc_factor)
 
+      new_dmc = previous_dmc + log_drying_rate
     end if
-    if (dmc-65>0) then
 
-    end if
-    function_in_rain_effect=100./(0.5+0.3*dmc)
-
-    function_in_rain_effect=14.-1.3*ALOG(dmc)
-
-    function_in_rain_effect=6.2*ALOG(dmc)-17.2
-    dmc_after_rain=dmc_moisture+(1000.*effective_rain)/(48.77+function_in_rain_effect*effective_rain)
-    dmc_after_rain=43.43*(5.6348-ALOG(dmc_after_rain-20.))
-    
-    if(dmc_after_rain >= 0) then
-      new_dmc=dmc_after_rain+drying_factor
-    else
-        new_dmc = drying_factor
-    end if
+    get_dmc = new_dmc
   end function
 
+  real function get_dmc_after_rain(moisture_after_rain)
+    real :: moisture_after_rain,val
+
+    ! Apply formula
+    val = 43.43*(5.6348-ALOG(moisture_after_rain-20.)) 
+
+    ! Force value >=0
+    if (val<0) then
+      val=0
+    end if
+
+    get_dmc_after_rain = val
+end function
+
+  real function get_effective_rainfall(rainfall)
+    real :: rainfall
+
+    if (rainfall > 1.5) then
+      get_effective_rainfall = (0.92*rainfall)-1.27
+    else
+      get_effective_rainfall = rainfall
+    end if
+
+  end function
+
+  real function get_dmc_moisture()
+    get_dmc_moisture = 20.0+280./EXP(0.023*previous_dmc)
+  end function
+
+  real function get_dmc_rain_effect()
+    real :: val
+
+    if (previous_dmc <=33) then
+      val = 100./(0.5+0.3*previous_dmc)
+    else if (previous_dmc>33 .AND. previous_dmc<=65) then
+      val = 14.-1.3*ALOG(previous_dmc)
+    else if (previous_dmc>65) then
+      val = 6.2*ALOG(previous_dmc)-17.2
+    end if
+
+    get_dmc_rain_effect = val
+  end function
+
+  real function get_dmc_log_drying_rate(temperature,humidity,dmc_factor)
+    real :: temperature,dmc_factor,new_temperature
+    integer :: humidity
+
+    ! Temperature cannot be less than -1.1
+    if (temperature < -1.1) then
+      new_temperature = -1.1
+    else
+      new_temperature = temperature
+    end if
+
+    get_dmc_log_drying_rate=1.894*(new_temperature + 1.1)*(100.-humidity)*(dmc_factor*0.0001)
+  end function
+
+  real function get_dmc_moisture_after_rain(dmc_moisture,rainfall)
+    real :: effective_rain,function_in_rain_effect,dmc_moisture,rainfall
+
+    effective_rain = get_effective_rainfall(rainfall)
+    function_in_rain_effect = get_dmc_rain_effect()
+
+    get_dmc_moisture_after_rain = dmc_moisture+(1000.*effective_rain)/(48.77+function_in_rain_effect*effective_rain)
+  end function
 end module FFWIndices
