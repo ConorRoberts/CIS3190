@@ -285,11 +285,10 @@ contains
   ! -----------------------------------------------------------------------
 
   real function get_isi(wind_speed)
-    real :: SI,SF
+    real :: SF
     integer :: wind_speed
     SF=19.1152*EXP(-0.1386*final_fine_fuel_moisture)*(1.+(final_fine_fuel_moisture**4.65/7950000.))
-    SI=SF*EXP(0.05039*wind_speed)
-    get_isi=SI
+    get_isi=SF*EXP(0.05039*wind_speed)
   end function
 
   real function get_bui(dc,dmc)
@@ -302,7 +301,23 @@ contains
     if (bui<0) then
       bui=0
     end if
-    
+
     get_bui=bui
+  end function
+
+  real function get_fwi(bui,isi)
+    real :: bui,isi,B
+
+    if(bui > 80) then
+      B = 0.1*isi*(1000./(25.+108.64/EXP(0.023*bui)))
+    else
+      B = 0.1*isi*(0.626*bui**0.809+2.)
+    end if 
+
+    if(B > 1) then
+      get_fwi = EXP(2.72*(0.43*ALOG(B))**0.647)
+    else
+      get_fwi = B
+    end if
   end function
 end module FFWIndices

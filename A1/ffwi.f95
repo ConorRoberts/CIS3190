@@ -53,7 +53,7 @@ program ffwi
         dc=get_dc(temperature,rainfall,dc,dc_factors(current_month))
         isi=get_isi(W)
         bui=get_bui(dc,dmc)
-        fwi=0
+        fwi=get_fwi(bui,isi)
 
         if (should_print_header) then
             call print_header()
