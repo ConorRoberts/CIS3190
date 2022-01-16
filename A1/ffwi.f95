@@ -7,8 +7,8 @@ program ffwi
     real, dimension(12) :: dmc_factors,dc_factors
     integer :: i=0,days_left=0,current_month=0,current_day=0
     real :: temperature,rainfall
-    integer:: humidity,wind_speed,dmc,dc,isi,bui,fwi,ffmc
-    real :: starting_ffmc
+    integer:: humidity,wind_speed,dmc,dc,isi,bui,fwi
+    real :: starting_ffmc,ffmc
     logical :: should_print_header = .TRUE.
 
     ! Get filename from stdin
@@ -52,7 +52,7 @@ program ffwi
         end if
         
         ! Print data
-        write(*,105) current_month,current_day,temperature,humidity,wind_speed,rainfall,ffmc,dmc,dc,isi,bui,fwi
+        write(*,105) current_month,current_day,temperature,humidity,wind_speed,rainfall,nint(ffmc),dmc,dc,isi,bui,fwi
 
         previous_ffmc = ffmc
         previous_dc = dc
