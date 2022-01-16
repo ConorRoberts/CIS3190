@@ -7,9 +7,10 @@ program ffwi
     real, dimension(12) :: dmc_factors,dc_factors
     integer :: i=0,days_left=0,current_month=0,current_day=0
     real :: temperature,rainfall
-    integer:: humidity,wind_speed,dc,isi,bui,fwi
-    real :: starting_ffmc,ffmc,dmc
+    integer:: humidity,wind_speed,H,W
+    real :: starting_ffmc,ffmc,dmc,dc,isi,bui,fwi
     logical :: should_print_header = .TRUE.
+    real :: T,R
 
     ! Get filename from stdin
     print *,"Please enter the name of the file containing the FFW indices: "
@@ -32,6 +33,7 @@ program ffwi
     read(1,102) starting_ffmc,starting_dmc,starting_dc,current_month,days_left
     ffmc = starting_ffmc
     dmc = starting_dmc
+    dc = starting_dc
 
     ! Get initial current day
     current_day = month_lengths(current_month) - days_left+1
@@ -40,11 +42,17 @@ program ffwi
     do
         read(1,101,END=400) temperature,humidity,wind_speed,rainfall
 
+        ! Assign descriptive variables to shorter strings to respect column limit
+        W = wind_speed
+        T = temperature
+        R = rainfall
+        H = humidity
+
         ffmc=get_ffmc(temperature,humidity,wind_speed,rainfall,ffmc)
         dmc=get_dmc(temperature,humidity,rainfall,dmc,dmc_factors(current_month))
-        dc=0
-        isi=0
-        bui=0
+        dc=get_dc(temperature,rainfall,dc,dc_factors(current_month))
+        isi=get_isi(W)
+        bui=get_bui(dc,dmc)
         fwi=0
 
         if (should_print_header) then
@@ -53,7 +61,7 @@ program ffwi
         end if
         
         ! Print data
-        write(*,105) current_month,current_day,temperature,humidity,wind_speed,rainfall,nint(ffmc),nint(dmc),dc,isi,bui,fwi
+        write(*,105) current_month,current_day,T,H,W,R,nint(ffmc),nint(dmc),nint(dc),nint(isi),nint(bui),nint(fwi)
 
         previous_ffmc = ffmc
         previous_dc = dc
