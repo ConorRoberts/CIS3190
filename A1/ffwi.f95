@@ -23,14 +23,14 @@ program ffwi
 105 format(1X,2I3,F6.1,I4,I6,F7.1,6I6)
 
     ! Open file (corresponding to filename) and month data
-    open(unit=1,file=file_name,status='old')
+    open(unit=1,file=file_name,status='old',ERR=404)
 
     ! Read month lengths, dmc daylength factors, dc daylength factors
     do i=1,12
-        read(1,100) month_lengths(i),dmc_factors(i),dc_factors(i)
+        read(1,100,END=400) month_lengths(i),dmc_factors(i),dc_factors(i)
     end do
 
-    read(1,102) starting_ffmc,starting_dmc,starting_dc,current_month,days_left
+    read(1,102,END=400) starting_ffmc,starting_dmc,starting_dc,current_month,days_left
     ffmc = starting_ffmc
     dmc = starting_dmc
     dc = starting_dc
@@ -82,6 +82,7 @@ program ffwi
 
     end do
     
+404 print *,"Error: File not found"
 400 close(1)
 
 end program ffwi
