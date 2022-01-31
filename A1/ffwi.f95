@@ -1,36 +1,74 @@
+! Forest Fire Weather Index (FFWI) Calculator
+! Author: Conor Roberts
+! Date: 31/01/2022
+! Based on the work of C.E. Van Wagner & T.L. Pickett
+
 program ffwi
     use FFWIndices
 
     ! Declare variables
-    character(len=100) :: file_name=""
+    character(len=100) :: input_file_name="",do_file_output="",output_file_name=""
     integer, dimension(12) :: month_lengths
     real, dimension(12) :: dmc_factors,dc_factors
     integer :: i=0,days_left=0,current_month=0,current_day=0
-    real :: temperature,rainfall
-    integer:: humidity,wind_speed,H,W
+    real :: temperature,rainfall, T, R
+    integer:: humidity,wind_speed,H,W, file_read_status
     real :: starting_ffmc,ffmc,dmc,dc,isi,bui,fwi
-    logical :: should_print_header = .TRUE.
-    real :: T,R
-
-    ! Get filename from stdin
-    print *,"Please enter the name of the file containing the FFW indices: "
-    read *,file_name
+    logical :: should_print_header = .TRUE., file_exists
 
     ! Declare formats
-100 format(I2,F4.1,F4.1)
-101 format(F4.1,I4,I4,F4.1)
-102 format(F4.1,F4.1,F5.1,I2,I2)
-105 format(1X,2I3,F6.1,I4,I6,F7.1,6I6)
+    100 format(I2,F4.1,F4.1)
+    101 format(F4.1,I4,I4,F4.1)
+    102 format(F4.1,F4.1,F5.1,I2,I2)
+    103 format(1X,2I3,F6.1,I4,I6,F7.1,6I6)
 
-    ! Open file (corresponding to filename) and month data
-    open(unit=1,file=file_name,status='old',ERR=404)
+    ! Get filename from stdin
+    print *,"Please enter the name of the input file: "
+    read *,input_file_name
+    
+    ! Check if input file exists
+    inquire(file=input_file_name, exist=file_exists)
+    
+    ! If file does not exist, close program
+    if (file_exists) then
+        open(unit=1,file=input_file_name,status="old",action="read")
+    else
+        print *,"Error - File not found"
+        call exit
+    end if
+
+    ! Check whether or not we're going to do file output
+    do while(do_file_output /= "yes" .and. do_file_output /= "no")
+        print *,"Would you like to output to a file? (yes/no): "
+        read *,do_file_output
+    end do
+
+    ! We are outputting to file. Get new file name and open it.
+    if (do_file_output=="yes") then
+        print *,"What should this file be named?: "
+        read *,output_file_name
+
+        ! Check if output file exists
+        inquire(file=output_file_name, exist=file_exists)
+
+        ! If file does not exist, close program
+        if (file_exists) then
+            print *,"Error - File already exists"
+            call exit
+        else
+            open(unit=2,file=output_file_name,status='new',action="write")
+        end if
+    end if
 
     ! Read month lengths, dmc daylength factors, dc daylength factors
     do i=1,12
-        read(1,100,END=400) month_lengths(i),dmc_factors(i),dc_factors(i)
+        read(1,100,IOSTAT=file_read_status) month_lengths(i),dmc_factors(i),dc_factors(i)
+        call check_file_read_status(file_read_status)
     end do
 
-    read(1,102,END=400) starting_ffmc,starting_dmc,starting_dc,current_month,days_left
+    read(1,102,IOSTAT=file_read_status) starting_ffmc,starting_dmc,starting_dc,current_month,days_left
+    call check_file_read_status(file_read_status)
+
     ffmc = starting_ffmc
     dmc = starting_dmc
     dc = starting_dc
@@ -40,7 +78,8 @@ program ffwi
 
     ! Main loop
     do
-        read(1,101,END=400) temperature,humidity,wind_speed,rainfall
+        read(1,101,IOSTAT=file_read_status) temperature,humidity,wind_speed,rainfall
+        call check_file_read_status(file_read_status)
 
         ! Assign descriptive variables to shorter strings to respect column limit
         W = wind_speed
@@ -56,13 +95,22 @@ program ffwi
         fwi=get_fwi(bui,isi)
 
         if (should_print_header) then
-            call print_header()
+            if (do_file_output=="yes") then
+                call print_header_to_stream(2)
+            else
+                call print_header()
+            end if
             should_print_header = .FALSE.
         end if
         
         ! Print data
-        write(*,105) current_month,current_day,T,H,W,R,nint(ffmc),nint(dmc),nint(dc),nint(isi),nint(bui),nint(fwi)
+        if (do_file_output=="yes") then
+            write(2,103) current_month,current_day,T,H,W,R,nint(ffmc),nint(dmc),nint(dc),nint(isi),nint(bui),nint(fwi)
+        else
+            write(*,103) current_month,current_day,T,H,W,R,nint(ffmc),nint(dmc),nint(dc),nint(isi),nint(bui),nint(fwi)
+        end if
 
+        ! Track previous values
         previous_ffmc = ffmc
         previous_dc = dc
         previous_dmc = dmc
@@ -81,8 +129,13 @@ program ffwi
         end if
 
     end do
+
+    ! Close input file
+    close (1,status="keep")
     
-404 print *,"Error: File not found"
-400 close(1)
+    ! Check if output file should be closed
+    if (do_file_output=="yes") then
+        close (2,status="keep")
+    end if
 
 end program ffwi

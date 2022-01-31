@@ -5,6 +5,27 @@ module FFWIndices
    real :: correction,starting_moisture,final_fine_fuel_moisture
 
 contains
+   
+   ! Prints out column headings for the data table to a specific stream
+   subroutine print_header_to_stream(stream)
+      integer :: stream
+
+      write (stream,*) ""
+      write (stream,*) "  DATE  TEMP  RH   WIND  RAIN   FFMC   DMC   DC   ISI   BUI   FWI"
+      write (stream,*) ""
+   end subroutine
+
+   subroutine check_file_read_status(read_file_status)
+      integer :: read_file_status
+
+      if (read_file_status > 0)  then
+         print *,"Error reading file. Exiting."
+         call exit
+      else if (read_file_status < 0) then
+            print *,"End of file reached. Exiting."
+            call exit
+      end if
+   end subroutine
    !-----------------------------------------------------------------------
    ! Fine Fuel Moisture Code (FFMC)
    ! -----------------------------------------------------------------------
@@ -87,7 +108,7 @@ contains
       integer :: wind_speed,humidity
 
       log_drying_rate = 0.424*(1.-(humidity/100.)**1.7)+(0.0694*(wind_speed**0.5))*(1.-(humidity/100.)**8)
-      log_drying_rate = log_drying_rate*(0.463*(EXP(0.0365*temperature)))
+      log_drying_rate = log_drying_rate*(0.463*(exp(0.0365*temperature)))
 
       get_log_drying_rate = log_drying_rate
    end function
@@ -114,8 +135,8 @@ contains
    real function get_dry_emc(temperature,humidity)
       real :: temperature,val
       integer :: humidity
-      val = 0.942*(humidity**0.679) + (11.*EXP((humidity-100.)/10.))
-      val = val + 0.18*(21.1-temperature)*(1.-1./EXP(0.115*humidity))
+      val = 0.942*(humidity**0.679) + (11.*exp((humidity-100.)/10.))
+      val = val + 0.18*(21.1-temperature)*(1.-1./exp(0.115*humidity))
 
       get_dry_emc = val
    end function
@@ -123,8 +144,8 @@ contains
    real function get_wet_emc(temperature,humidity)
       real :: temperature,val
       integer :: humidity
-      val = 0.618*(humidity**0.753)+(10.*EXP((humidity-100.)/10.))
-      val = val + 0.18*(21.1-temperature)*(1.-1./EXP(0.115*humidity))
+      val = 0.618*(humidity**0.753)+(10.*exp((humidity-100.)/10.))
+      val = val + 0.18*(21.1-temperature)*(1.-1./exp(0.115*humidity))
 
       get_wet_emc = val
    end function
@@ -144,7 +165,7 @@ contains
    end function
 
    real function get_correction()
-      get_correction = 8.73*EXP(-0.1117*previous_ffmc)
+      get_correction = 8.73*exp(-0.1117*previous_ffmc)
    end function
 
    !-----------------------------------------------------------------------
@@ -184,7 +205,7 @@ contains
       real :: moisture_after_rain,val
 
       ! Apply formula
-      val = 43.43*(5.6348-ALOG(moisture_after_rain-20.))
+      val = 43.43*(5.6348-alog(moisture_after_rain-20.))
 
       ! Force value >=0
       if (val<0) then
@@ -207,7 +228,7 @@ contains
    end function
 
    real function get_dmc_moisture()
-      get_dmc_moisture = 20.0+280./EXP(0.023*previous_dmc)
+      get_dmc_moisture = 20.0+280./exp(0.023*previous_dmc)
    end function
 
    real function get_dmc_rain_effect()
@@ -216,9 +237,9 @@ contains
       if (previous_dmc <=33) then
          val = 100./(0.5+0.3*previous_dmc)
       else if (previous_dmc>33 .AND. previous_dmc<=65) then
-         val = 14.-1.3*ALOG(previous_dmc)
+         val = 14.-1.3*alog(previous_dmc)
       else if (previous_dmc>65) then
-         val = 6.2*ALOG(previous_dmc)-17.2
+         val = 6.2*alog(previous_dmc)-17.2
       end if
 
       get_dmc_rain_effect = val
@@ -258,8 +279,8 @@ contains
 
       if (rainfall > 2.8) then
          effective_rain=(0.83*rainfall)-1.27
-         dc_moisture = 800.*EXP(-previous_dc/400.)
-         dc_after_rain=previous_dc-400.*ALOG(1.+((3.937*effective_rain)/dc_moisture))
+         dc_moisture = 800.*exp(-previous_dc/400.)
+         dc_after_rain=previous_dc-400.*alog(1.+((3.937*effective_rain)/dc_moisture))
 
          if(dc_after_rain < 0) then
             dc_after_rain=0.0
@@ -288,8 +309,8 @@ contains
    real function get_isi(wind_speed)
       real :: SF
       integer :: wind_speed
-      SF=19.1152*EXP(-0.1386*final_fine_fuel_moisture)*(1.+(final_fine_fuel_moisture**4.65/7950000.))
-      get_isi=SF*EXP(0.05039*wind_speed)
+      SF=19.1152*exp(-0.1386*final_fine_fuel_moisture)*(1.+(final_fine_fuel_moisture**4.65/7950000.))
+      get_isi=SF*exp(0.05039*wind_speed)
    end function
 
    real function get_bui(dc,dmc)
@@ -318,13 +339,13 @@ contains
       real :: bui,isi,B
 
       if(bui > 80) then
-         B = 0.1*isi*(1000./(25.+108.64/EXP(0.023*bui)))
+         B = 0.1*isi*(1000./(25.+108.64/exp(0.023*bui)))
       else
          B = 0.1*isi*(0.626*bui**0.809+2.)
       end if
 
       if(B > 1) then
-         get_fwi = EXP(2.72*(0.43*ALOG(B))**0.647)
+         get_fwi = exp(2.72*(0.43*alog(B))**0.647)
       else
          get_fwi = B
       end if
