@@ -1,0 +1,1 @@
+gnatmake -Wall imagePGM.adb imagePROCESS.adb image.adb
