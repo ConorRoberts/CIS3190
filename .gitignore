@@ -2,3 +2,7 @@
 
 /A1/*
 !/A1/*.f95
+
+/A2/**/**
+!/A2/submit/*.adb
+!/A2/submit/*.ads
