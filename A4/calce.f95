@@ -1,75 +1,72 @@
-! Forest Fire Weather Index (FFWI) Calculator
 ! Author: Conor Roberts
 ! Date: 01/04/2022
-! Based on the work of C.E. Van Wagner & T.L. Pickett
+! Description: This program generates e to the specified number of digits.
 
-! Declare procedure keepe that saves a string to a file
-! Inputs:
-!   filename: name of file to save to
-!   string: string to save
-subroutine keepe(string,file_name)
-    integer :: read_file_status
-
-    write(2,*) string
- end subroutine
+subroutine keepe(string)
+    character(len=*), intent(in) :: string
+    write(2,"(a)",advance="no") string
+end subroutine
 
 program calce
     ! Declare variables
     character(len=100) :: file_name=""
-    integer :: i=0,n=0,tmp=0,carry=0
+    integer :: n=0,tmp=0,carry=0
     real :: m = 4
     logical :: file_exists = .false.
-    integer, dimension(12) :: coef
-    real :: test = (n + 1) * 2.30258509
- 
+    real :: test = 0.0
+    character (len=:), ALLOCATABLE :: arr
+    integer,dimension(:), ALLOCATABLE :: coef
+    
     ! Get filename from stdin
-    print *,"Please enter the name of the input file: "
-    read *, input_file_name
-
+    print *,"Enter file name: "
+    read *, file_name
+    
     ! Get number of digits
-    print *,"Please enter the name of the input file: "
+    print *,"Enter number of digits: "
     read "(I10)", n
-
-  
+    
     ! Check if output file exists
     inquire(file=file_name, exist=file_exists)
- 
+    
     ! If file does not exist, open as old file
     if (file_exists) then
-        open(unit=1,file=file_name,status='old',action="write")
+        open(unit=2,file=file_name,status='old',action="write")
     else
-        open(unit=1,file=file_name,status='new',action="write")
+        open(unit=2,file=file_name,status='new',action="write")
     end if
- 
-
     
-    do
-        if ((m * (log (m) - 1.0) + 0.5 * log (6.2831852 * m)) >= test) then
-            call exit
-        end if
-
+    test = (n + 1) * 2.30258509
+    do while ((m * (log (m) - 1.0) + 0.5 * log (6.2831852 * m)) < test)
         m = m + 1
     end do
-        
-    for (int i = 0; i < m + 1; i++)
-        coef[i] = 1;
 
-    char *arr = (char *)calloc(n + 2, 1);
-    arr[0] = '2';
-    arr[1] = '.';
+    allocate( coef(nint(m)+1) )
 
-    for (int i = 0; i < n; i++)
-    {
-        int carry = 0;
-        for (int j = m; j > 1; j--)
-        {
-            int tmp = coef[j] * 10 + carry;
+    do i = 1, nint(m)+2
+        coef(i) = 1;
+    end do
+
+    allocate( character(len=n+1) :: arr )
+
+    arr(1:2) = "2."
+    do i = 3, n+1
+        carry = 0
+        do j = nint(m), 2, -1
+            tmp = coef(j) * 10 + carry;
+
             carry = tmp / j;
-            coef[j] = tmp - carry * j;
-        }
-        arr[i + 2] = ((int)carry) + 48;
-    }
- 
-    keepe(arr, file_name)
+
+            coef(j) = tmp - carry * j;
+        end do
+
+        arr(i:i) = char(carry + 48)
+    end do
+
+    call keepe(arr)
+
+    close (2,status="keep")
+
+    DEALLOCATE(coef)
+    DEALLOCATE(arr)
  end program calce
  

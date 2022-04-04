@@ -1,0 +1,4 @@
+gfortran -Wall calce.f95 -o calce
+gnatmake -Wall calce.adb
+gcc -ansi -Wall -std=c99 -o calce calce.c
+python3 calce.py

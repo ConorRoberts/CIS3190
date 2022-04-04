@@ -7,6 +7,7 @@ def keepe(fileName,arr):
             f.write(str(i))
 
 
+# This program generates e to the specified number of digits.
 if (__name__ == '__main__'):
     fileName = input("Enter file name: ")
 
@@ -17,7 +18,7 @@ if (__name__ == '__main__'):
 
     while ((m * (math.log(m)-1)+0.5 * math.log(6.2831852 * m)) < test):
         m += 1
-
+    
     # Initialize coef array to be all 1s
     coef = [1 for _ in range(0, m+1)]
     arr = []
@@ -33,6 +34,7 @@ if (__name__ == '__main__'):
             carry = tmp//j
 
             coef[j] = int(tmp-carry*j)
+            
         arr.append(int(carry))
 
     # Join elements of arr to form string

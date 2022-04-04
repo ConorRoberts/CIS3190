@@ -5,6 +5,7 @@
 /**
  * @author @ConorRoberts
  * @date 01/04/2022
+ * This program generates e to the specified number of digits.
  */
 
 /**

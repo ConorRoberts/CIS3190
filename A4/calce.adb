@@ -5,6 +5,7 @@ with Ada.Numerics.Elementary_Functions; use Ada.Numerics.Elementary_Functions;
 with Ada.Numerics;
 
 -- Main program
+-- This program generates e to the specified number of digits.
 procedure calce is
     fileName    : Unbounded_String;
     digitsInput : Unbounded_String;
@@ -42,7 +43,8 @@ begin
     test := (Float (n) + 1.0) * 2.302_585_09;
 
     loop
-        exit when (Float (m) * (Log (Float (m), Ada.Numerics.e) - 1.0) + 0.5 * Log (6.283_185_2 * Float (m), Ada.Numerics.e)) >= test;
+        exit when
+           (Float (m) * (Log (Float (m), Ada.Numerics.e) - 1.0) + 0.5 * Log (6.283_185_2 * Float (m), Ada.Numerics.e)) >= test;
 
         m := m + 1;
     end loop;
